@@ -172,6 +172,10 @@ function buildWholeJSON(inputString){
 
 	let parameters = determineParameterStrings(inputString).map((elem) => buildSingleJSON(elem));
 
+	parameters.map((elem) => elem.name).forEach((elem) => {
+		obj.allParamsArray.push(elem);
+	});
+
 	let returnValuesArray = parameters.filter((elem) => isReturnValueType(elem.type));
 
 	returnValuesArray.forEach((elem) => {
