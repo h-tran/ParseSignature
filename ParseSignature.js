@@ -164,7 +164,8 @@ function buildWholeJSON(inputString){
 		name: n,
 		returnValues: [],
 		requiredParams: [],
-		optionalParams: []
+		optionalParams: [],
+		allParamsArray: []
 	}
 	let t = nameAndType.pop();
 	if(t !== 'void')
