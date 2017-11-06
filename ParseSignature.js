@@ -2,6 +2,8 @@
 function removeAddressOperator(s){
 	if(s[0] === '&')
 		return s.substring(1);
+	if(s[s.length-1] === '&')
+		return s.substring(0,length-1);
 	else
 		return s;
 }
@@ -80,6 +82,7 @@ function allOccurrencesIndexes(inputString,separationChar){
 
 }
 
+//returns array of strings from @param inputString separated by @param separationChar
 function allStringElements(inputString,separationChar=','){
 	let allStringList = [];
 	let startIndex = 0;
@@ -108,11 +111,17 @@ function determineNameAndType(inputString){
 function determineParameterStrings(inputString){
 
 	return 	allStringElements(extractParenthesisContent(inputString))
-			.map((inputString => inputString.trim()))
+			.map(inputString => inputString.trim())
 			.map((inputString) => {return allStringElements(inputString,' ')})	
 }
 
+function allParameterStrings(inputString){
+	return allStringElements(inputString, ' ').map(elem => elem.trim());
+}
+
 function buildSingleJSON(inputArray){
+	//console.log(inputArray);
+	inputArray.filter((elem) => isIdentifier(elem));
 	let obj;
 	if(inputArray.length===2){
 		const t = inputArray[0];
@@ -132,32 +141,33 @@ function buildSingleJSON(inputArray){
 			defaultValue: d
 		}
 	}
+	
 	else if(inputArray.length===3){
-		if(isIdentifier(inputArray[0])){
-			const t = inputArray[1];
-			const n = removeAddressOperator(inputArray[2]);
-			obj = {
-				type: t,
-				name: n				
-			}
+		const t = inputArray[1];
+		const n = removeAddressOperator(inputArray[2]);
+		obj = {
+			type: t,
+			name: n				
 		}
 	}
+
 	else if(inputArray.length===5){
-		if(isIdentifier(inputArray[0])){
-			const t = inputArray[1];
-			const n = removeAddressOperator(inputArray[2]);
-			const d = inputArray[4];
-			obj = {
-				type: t,
-				name: n,
-				defaultValue: d
-			}
-		}		
+		const t = inputArray[1];
+		const n = removeAddressOperator(inputArray[2]);
+		const d = inputArray[4];
+		obj = {
+			type: t,
+			name: n,
+			defaultValue: d
+		}	
 	}
+	
 	return obj;
 }
 
 function buildWholeJSON(inputString){
+
+
 	let nameAndType = determineNameAndType(inputString);
 	const n = nameAndType.pop();
 	let obj = {
@@ -170,6 +180,37 @@ function buildWholeJSON(inputString){
 	let t = nameAndType.pop();
 	if(t !== 'void')
 		obj.returnValues.push({type: t, name: 'returnValue'});
+
+
+	let paramStrings = allStringElements(extractParenthesisContent(inputString)).map(elem => elem.trim());
+	//console.log(paramStrings);
+
+	paramStrings.map((stringElem) =>{
+		if(stringElem.includes("CV_OUT")){
+			let b = buildSingleJSON(allParameterStrings(stringElem));
+			obj.returnValues.push(b);
+			obj.allParamsArray.push(b.name);
+		}
+		else{
+			let b = buildSingleJSON(allParameterStrings(stringElem));
+			//console.log(b);
+			if(isReturnValueType(b.type))
+				obj.returnValues.push(b);
+			else if(b.hasOwnProperty('defaultValue'))
+				obj.optionalParams.push(b);
+			else
+				obj.requiredParams.push(b);
+
+			obj.allParamsArray.push(b.name);
+		}
+	})
+
+
+
+
+
+
+	/*
 
 	let parameters = determineParameterStrings(inputString).map((elem) => buildSingleJSON(elem));
 
@@ -194,6 +235,8 @@ function buildWholeJSON(inputString){
 	requiredParamsArray.forEach((elem) => {
 		obj.requiredParams.push(elem);
 	});
+
+	*/
 
 	return obj;
 }
